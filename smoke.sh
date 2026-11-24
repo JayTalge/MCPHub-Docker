@@ -60,5 +60,18 @@ curl -fsS http://127.0.0.1:$PORT/.well-known/oauth-authorization-server | jq -e 
   || { echo "OAuth server metadata missing"; exit 1; }
 echo "mcp auth ok"
 
+# OIDC wait wrapper (oidc-wait.sh): waits for an unreachable IdP, then starts anyway; an
+# reachable one (file:// stands in for it) passes without waiting. Not a real IdP, but
+# exercises the wrapper and proves it still hands over to the upstream entrypoint.
+wrap() { docker run --rm --network none --entrypoint /usr/local/bin/entrypoint.sh \
+  -e BETTER_AUTH_OIDC_ENABLED=true -e OIDC_WAIT_SECONDS=5 "$@" "$IMG" sh -c 'echo started'; }
+out=$(wrap -e BETTER_AUTH_OIDC_DISCOVERY_URL=http://idp.invalid/x 2>&1)
+grep -q 'oidc-wait: waiting' <<<"$out" && grep -q 'starting anyway' <<<"$out" && grep -qx started <<<"$out" \
+  || { echo "oidc-wait did not wait/start for an unreachable IdP: $out"; exit 1; }
+out=$(wrap -e BETTER_AUTH_OIDC_DISCOVERY_URL=file:///etc/hostname 2>&1)
+! grep -q 'oidc-wait' <<<"$out" && grep -qx started <<<"$out" \
+  || { echo "oidc-wait delayed a reachable IdP: $out"; exit 1; }
+echo "oidc wait ok"
+
 if docker logs smoke 2>&1 | grep -E '\[FATAL\]|BetterAuthError'; then echo "fatal errors in log"; exit 1; fi
 echo "MCPHub $got, node $node"

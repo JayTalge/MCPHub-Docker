@@ -26,4 +26,8 @@ services:
       - ./data:/app/data
 ```
 
+### OIDC wait
+
+MCPHub registers its OIDC provider only once at start and skips it permanently (`Provider "oidc": … Provider skipped`) if the IdP does not answer the discovery request then, e.g. when both come up together after a reboot. The image therefore waits for `BETTER_AUTH_OIDC_DISCOVERY_URL` (or `OIDC_DISCOVERY_URL`) before starting MCPHub. `OIDC_WAIT_SECONDS` sets the maximum wait (default 300, `0` disables). After the timeout MCPHub starts anyway, so the local admin fallback keeps working with a dead IdP. A discovery URL that exists only in `mcp_settings.json` is not watched. The upstream entrypoint stays in the image as `/usr/local/bin/entrypoint-upstream.sh`.
+
 For automatic patch updates, pin the minor tag and let Watchtower update the container. Switch to a new minor line by hand. Database mode needs a persistent `JWT_SECRET`, `BETTER_AUTH_SECRET` and credential key (`MCPHUB_CREDENTIAL_ENCRYPTION_KEY` or the key file next to the settings path); see the upstream docs.

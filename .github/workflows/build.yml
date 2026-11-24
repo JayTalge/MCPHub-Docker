@@ -14,7 +14,7 @@ on:
         default: false
   push:
     branches: [main]
-    paths: ["Dockerfile", "node-overlay.sh", "resolve-versions.py", "smoke.sh", ".github/workflows/build.yml"]
+    paths: ["Dockerfile", "node-overlay.sh", "oidc-wait.sh", "resolve-versions.py", "smoke.sh", ".github/workflows/build.yml"]
 
 permissions:
   contents: read
